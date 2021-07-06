@@ -15,9 +15,9 @@ namespace gdm_server.Utils
         /// <param name="forecolor">Foreground color of the message.</param>
         public static void Write(string message, Utils.LogLevel level = Utils.LogLevel.Off, ConsoleColor forecolor = ConsoleColor.Gray)
         {
-            if ((int)level <= Config.LogLevel)
+            if ((int)level <= Config.Global.LogLevel)
             {
-                if ((int)Config.LogLevel > 0)
+                if ((int)Config.Global.LogLevel > 0)
                     FileLog.Instance.Log(message, level);
 
                 Console.ForegroundColor = forecolor;

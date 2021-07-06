@@ -4,15 +4,20 @@ namespace gdm_server
 {
     class Program
     {
-        // Main entry point.
+        private static string config_file = "server.json";
+        /// Main entry point.
         static void Main(string[] args)
         {
-            Console.WriteLine("Initializing logs...");
+            Console.WriteLine("Initializing...");
+
+            // Initialize config
+            Config.LoadConfig(config_file);
+
             // Intialize the logger.
-            if (Config.LogLevel > 0)
+            if (Config.Global.LogLevel > 0)
             {
                 // create logger
-                Utils.FileLog.Instance = new Utils.FileLog(Config.LogFile);
+                Utils.FileLog.Instance = new Utils.FileLog(Config.Global.LogFile);
                 Utils.FileLog.Instance.Log("Started GDM-Server", Utils.LogLevel.Off);
             }
 
@@ -21,8 +26,6 @@ namespace gdm_server
 
             var LevelMultiplayerServer = new Level_Multiplayer.Server();
             LevelMultiplayerServer.Start();
-
-
         }
     }
 }

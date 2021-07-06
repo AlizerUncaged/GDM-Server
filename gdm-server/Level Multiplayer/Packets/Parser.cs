@@ -32,32 +32,37 @@ namespace gdm_server.Level_Multiplayer.Packets
         /// <summary>
         /// Read a single byte.
         /// </summary>
-        private byte ReadByte() {
+        public byte ReadByte() {
             return ReadBytes(1).FirstOrDefault();
         }
 
         /// <summary>
         /// Reads 4 bytes then converts it into an integer.
         /// </summary>
-        private int ReadInt32() {
+        public int ReadInt32() {
             return BitConverter.ToInt32(ReadBytes(4).ToArray());
         }
 
         /// <summary>
         /// Reads 2 bytes then converts it into short.
         /// </summary>
-        private short ReadInt16() {
+        public short ReadInt16() {
             return BitConverter.ToInt16(ReadBytes(2).ToArray());
         }
 
         /// <summary>
         /// Read desired number of bytes.
         /// </summary>
-        private IEnumerable<byte> ReadBytes(int length)
+        public IEnumerable<byte> ReadBytes(int length)
         {
             var segment = new ArraySegment<byte>(_buffer, _position, length);
             _position += length;
             return segment;
         }
+
+        ///
+        /// Now parse some objects.
+        ///
+
     }
 }

@@ -22,7 +22,7 @@ namespace gdm_server.Utils
         /// <param name="log_path">File path to log file, will append logs there.</param>
         public FileLog(string log_path)
         {
-            string filename = Config.LogFile.Replace("%date%", DateTime.UtcNow.ToString("yyyy-dd-M--HH-mm-ss"));
+            string filename = Config.Global.LogFile.Replace("%date%", DateTime.UtcNow.ToString("yyyy-dd-M--HH-mm-ss"));
             // check first if the directory exists, if not create it
             if (!Directory.Exists(Path.GetDirectoryName(filename))) Directory.CreateDirectory(filename);
 
