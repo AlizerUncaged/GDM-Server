@@ -1,6 +1,7 @@
 
 # Geometry Dash Multiplayer - Server  
 [![Discord](https://img.shields.io/badge/Discord-chat-blue?style=flat-square)](https://discord.gg/gdm)
+
 The first ever server for handling clients for the rhythm game Geometry Dash!
 
 ## Installation
