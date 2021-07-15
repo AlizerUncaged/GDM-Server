@@ -24,8 +24,8 @@ namespace gdm_server
             // initialize the server
             Utils.ConsoleLog.Write("Server is starting...", Utils.LogLevel.Off, ConsoleColor.Yellow);
 
-            var LevelMultiplayerServer = new Level_Multiplayer.Server();
-            LevelMultiplayerServer.Start();
+            // var LevelMultiplayerServer = new Level_Multiplayer.Server();
+            // LevelMultiplayerServer.Start();
         }
     }
 }
