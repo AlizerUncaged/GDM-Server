@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -23,8 +24,10 @@ namespace gdm_server.Level_Multiplayer.Client
         /// </summary>
         public int PlayerID;
 
-        public Client(int id, int key) {
-            Key = key; PlayerID = id;
+        private UdpClient _server;
+
+        public Client(int id, int key, UdpClient masterserver, IPEndPoint clientipep) {
+            Key = key; PlayerID = id; _server = masterserver; _ipep = clientipep;
         }
 
         /// <summary>
@@ -98,10 +101,10 @@ namespace gdm_server.Level_Multiplayer.Client
         /// Sends data to the client.
         /// </summary>
         /// <param name="buffer">The UDP Packet.</param>
-        public void WriteBytes(byte[] buffer, UdpClient server)
+        public void WriteBytes(byte[] buffer)
         {
             try {
-                server.SendAsync(buffer, buffer.Length, _ipep);
+                _server.SendAsync(buffer, buffer.Length, _ipep);
             }
             // normally an exception will be called naturally when
             // the client disconnected just before writing the packet
@@ -109,7 +112,7 @@ namespace gdm_server.Level_Multiplayer.Client
             // or if the server has connectivity problems
             catch (Exception ex)
             {
-                Utils.ConsoleLog.Write(ex.ToString(), Utils.LogLevel.Warn);
+                Log.Error(ex.ToString(), "An error occured sending bytes to client");
             }
         }
 

@@ -13,7 +13,6 @@ namespace gdm_server
     /// </summary>
     public class Config
     {
-        public static Config Global;
         /// <summary>
         /// The port the entire server will listen to.
         /// </summary>
@@ -37,16 +36,6 @@ namespace gdm_server
         public long MaxTimeoutSeconds = 10;
 
         /// <summary>
-        /// Set the log level.
-        /// 0, Off = nothing to log, doesn't create any file, nothing
-        /// 1, All = log everything
-        /// 2, Warn = logs only errors
-        /// 
-        /// Keep in mind that everything is written on the console.
-        /// </summary>
-        public int LogLevel = (int)Utils.LogLevel.All;
-
-        /// <summary>
         /// The log file where %date% has the date representation of yyyy-dd-M--HH-mm-ss
         /// if the folder where the log file doesn't exists, it automatically creates it.
         /// </summary>
@@ -55,14 +44,14 @@ namespace gdm_server
         /// <summary>
         /// Loads config file from path.
         /// </summary>
-        public static void LoadConfig(string path)
+        public static Config LoadConfig(string path)
         {
-            Global = JsonConvert.DeserializeObject<Config>(File.ReadAllText(path));
+            var Global = JsonConvert.DeserializeObject<Config>(File.ReadAllText(path));
 
             // rewrite to config file
             // necessary in case of new versions having new config 
             string output = JsonConvert.SerializeObject(Global);
-            File.WriteAllText(path, output);
+            File.WriteAllText(path, output); return Global;
         }
     }
 }

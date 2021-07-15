@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -11,6 +12,10 @@ namespace gdm_server.Level_Multiplayer
 {
     public class Server
     {
+        private Config _config;
+        public Server(Config configuration) {
+            _config = configuration;
+        }
         /// <summary>
         /// The reader thread.
         /// </summary>
@@ -36,25 +41,29 @@ namespace gdm_server.Level_Multiplayer
         /// </summary>
         public void Start()
         {
+
+            Log.Information("Starting Server on Port " + _config.Port);
+
             // initialize the server refresher timer
             ClientsRefresher.Elapsed += ClientsRefresher_Elapsed;
             ClientsRefresher.Start();
 
             // bind to socket
-            ServerEndpoint = new IPEndPoint(IPAddress.Parse(Config.Global.IP), Config.Global.Port);
+            ServerEndpoint = new IPEndPoint(IPAddress.Parse(_config.IP), _config.Port);
             ServerSocket = new UdpClient(ServerEndpoint);
 
             ServerReader = new Thread(() => {
 
-                // the sender's endpoint would be stored here
-                IPEndPoint Sender = new IPEndPoint(IPAddress.Any, 0);
 
-                Utils.ConsoleLog.Write("Server is now listening on port " + Config.Global.Port.ToString() + "!", Utils.LogLevel.Off, ConsoleColor.Yellow);
+                Log.Information("Server is now listening on port " + _config.Port.ToString() + "!");
 
                 while (_keepReading) {
 
                     try
                     {
+                        // the sender's endpoint would be stored here
+                        IPEndPoint Sender = new IPEndPoint(IPAddress.Any, 0);
+
                         var ReceivedBuffer = ServerSocket.Receive(ref Sender);
 
                         // make sure the buffer is not trolling
@@ -91,16 +100,22 @@ namespace gdm_server.Level_Multiplayer
                                     /// was not on the list, hence add it
                                     client = new Client.Client(
                                         PlayerID, // player id
-                                        Key       // client key
+                                        Key,       // client key
                                         /// now that the client key is stored
                                         /// any request sent of the same player
                                         /// id but different key will be discarded
                                         /// the key only changes whenever the client
                                         /// joins.
+                                        ServerSocket, 
+                                        Sender
                                         );
                                     // add client to list if not in here yet
                                     if (!Clients.ContainsKey(PlayerID))
+                                    {
                                         Clients.Add(PlayerID, client);
+                                        Log.Verbose($"New player added {PlayerID}");
+                                    }
+                                    client.WriteBytes(Packets.PacketFactory.HelloAck());
                                     break;
                                 case Packets.Prefix.Ping:
                                     /// a ping is received, thus
@@ -110,7 +125,7 @@ namespace gdm_server.Level_Multiplayer
                                 case Packets.Prefix.Disconnect:
                                     /// set the player to be disconnected on clients refresh
                                     client.ToBeRemoved = true;
-                                    Utils.ConsoleLog.Write(client.PlayerID.ToString() + " requests disconnection.", Utils.LogLevel.Off, ConsoleColor.DarkRed);
+                                    Log.Verbose(client.PlayerID.ToString() + " requests disconnection.");
                                     break;
                                 case Packets.Prefix.Message:
                                     // player 1
@@ -141,7 +156,6 @@ namespace gdm_server.Level_Multiplayer
                                     client.Color2 = PParser.ReadByte();
                                     client.IsGlow = PParser.ReadByte();
                                     client.IconIDs = PParser.ReadBytes(7).ToArray();
-
                                     break;
                             }
                         }
@@ -149,11 +163,10 @@ namespace gdm_server.Level_Multiplayer
                     }
                     catch (Exception ex)
                     {
-                        Utils.ConsoleLog.Write(ex.ToString(), Utils.LogLevel.Warn, ConsoleColor.Red);
+                        Log.Error(ex, "An error occured while reading packets.");
                     }
-
                 }
-                Utils.ConsoleLog.Write("Server reader stopped.", Utils.LogLevel.All, ConsoleColor.Red);
+                Log.Verbose("Server reader stopped.");
             });
 
 
@@ -167,7 +180,7 @@ namespace gdm_server.Level_Multiplayer
         {
             foreach (var Client in Clients.Values.ToList() /* required because lists in foreach are readonly */) {
                 ++Client.TimeoutCount;
-                if (Client.TimeoutCount > Config.Global.MaxTimeoutSeconds || Client.ToBeRemoved)
+                if (Client.TimeoutCount > _config.MaxTimeoutSeconds || Client.ToBeRemoved)
                 {
                     SendToClientsOfLevelID(Packets.PacketFactory.SendPlayerDisconnect(Client.PlayerID), Client);
                     Clients.Remove(Client.PlayerID);
@@ -188,7 +201,7 @@ namespace gdm_server.Level_Multiplayer
                 );
             foreach (var Client in PlayersOnLevel)
             {
-                Client.WriteBytes(buffer, ServerSocket);
+                Client.WriteBytes(buffer);
             }
         }
         /// <summary>
@@ -203,7 +216,6 @@ namespace gdm_server.Level_Multiplayer
         /// </summary>
         public void Stop() {
             _keepReading = false;
-
             // for the love of god please let me abort the thread.
             try
             {

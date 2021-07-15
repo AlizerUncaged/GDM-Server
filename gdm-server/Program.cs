@@ -1,4 +1,8 @@
-﻿using System;
+﻿using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.SystemConsole.Themes;
+using System;
+using System.Linq;
 
 namespace gdm_server
 {
@@ -8,24 +12,34 @@ namespace gdm_server
         /// Main entry point.
         static void Main(string[] args)
         {
-            Console.WriteLine("Initializing...");
-
             // Initialize config
-            Config.LoadConfig(config_file);
+            var config = Config.LoadConfig(config_file);
 
-            // Intialize the logger.
-            if (Config.Global.LogLevel > 0)
+
+            var logLevel = LogEventLevel.Information;
+#if DEBUG
+            logLevel = LogEventLevel.Verbose;
+#endif
+            if (args.Contains("--verbose"))
             {
-                // create logger
-                Utils.FileLog.Instance = new Utils.FileLog(Config.Global.LogFile);
-                Utils.FileLog.Instance.Log("Started GDM-Server", Utils.LogLevel.Off);
+                logLevel = LogEventLevel.Verbose;
+            }
+            else if (args.Contains("--errors-only"))
+            {
+                logLevel = LogEventLevel.Error;
             }
 
-            // initialize the server
-            Utils.ConsoleLog.Write("Server is starting...", Utils.LogLevel.Off, ConsoleColor.Yellow);
+            Log.Logger = new LoggerConfiguration()
+               .MinimumLevel.Is(logLevel)
+               .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+               .Enrich.FromLogContext()
+               .WriteTo.Console(theme: AnsiConsoleTheme.Code)
+               .CreateLogger();
+            Log.Information("Starting Geometry Dash Level Editor Multiplayer");
+            Log.Verbose("Reading config.json");
 
-            // var LevelMultiplayerServer = new Level_Multiplayer.Server();
-            // LevelMultiplayerServer.Start();
+            var LevelMultiplayerServer = new Level_Multiplayer.Server(config);
+            LevelMultiplayerServer.Start();
         }
     }
 }
