@@ -1,45 +1,50 @@
-﻿using Serilog;
-using Serilog.Events;
-using Serilog.Sinks.SystemConsole.Themes;
+﻿using log4net;
+using log4net.Config;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace gdm_server
 {
-    class Program
-    {
-        private static string config_file = "server.json";
+    class Program {
+        public static ILog Logger = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+
         /// Main entry point.
-        static void Main(string[] args)
-        {
-            // Initialize config
-            var config = Config.LoadConfig(config_file);
-
-
-            var logLevel = LogEventLevel.Information;
+        static async Task Main(string[] args) {
 #if DEBUG
-            logLevel = LogEventLevel.Verbose;
+            Config.IP = "127.0.0.1";
 #endif
-            if (args.Contains("--verbose"))
-            {
-                logLevel = LogEventLevel.Verbose;
-            }
-            else if (args.Contains("--errors-only"))
-            {
-                logLevel = LogEventLevel.Error;
-            }
+            var LogRespository = LogManager.GetRepository(Assembly.GetEntryAssembly());
+            XmlConfigurator.Configure(LogRespository, new FileInfo("log4net.config"));
+            Logger.Info($@"
+ ._       __          ____
+;  `\--,-' /`)    _.-'    `-._
+ \_/    ' | /`--,'            `-.     .--....____
+  /                              `._.'           `---...
+  |-.   _      ;                        .-----..._______)
+,,\q/ (q_>'_...                      .-'
+===/ ; _.-'~~-             /       ,'
+`""""`-'_,;  `""""         ___(       |
+         \         ; /'/   \      \
+          `.      //' (    ;`\    `\
+          / \    ;     `-  /  `-.  /
+         (  (;   ;     (__/    /  /
+          \,_)\  ;           ,'  /
+  .-.          |  |           `--'
+ (""_.) -._(__,> Log started {DateTime.UtcNow}
 
-            Log.Logger = new LoggerConfiguration()
-               .MinimumLevel.Is(logLevel)
-               .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-               .Enrich.FromLogContext()
-               .WriteTo.Console(theme: AnsiConsoleTheme.Code)
-               .CreateLogger();
-            Log.Information("Starting Geometry Dash Level Editor Multiplayer");
-            Log.Verbose("Reading config.json");
+");
 
-            var LevelMultiplayerServer = new Level_Multiplayer.Server(config);
-            LevelMultiplayerServer.Start();
+
+            var LevelMultiplayerServer = new Level_Multiplayer.LevelServer();
+            // LevelMultiplayerServer.Start();
+
+            var watsonServer = new Level_Multiplayer.Watson.WServer();
+            await watsonServer.StartServer();
         }
     }
 }
