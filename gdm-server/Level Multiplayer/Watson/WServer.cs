@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using WatsonWebserver;
 namespace gdm_server.Level_Multiplayer.Watson {
+    // entire server.
     public class WServer {
 
         private WatsonWebserver.Server server;

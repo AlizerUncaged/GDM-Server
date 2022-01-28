@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace gdm_server.Level_Multiplayer.Client {
     public class Player {
+        #region Player Data
         /// <summary>
         /// The key on main database if VIP.
         /// </summary>
@@ -19,9 +20,9 @@ namespace gdm_server.Level_Multiplayer.Client {
         /// The player ID of the client. Relies on
         /// Geometry Dash player ID.
         /// </summary>
-        public int PlayerID { get; set; }
+        public int PlayerId { get; set; }
 
-        public int AccountID { get; set; }
+        public int AccountId { get; set; }
 
         public bool IsVip { get; set; }
         public string Username { get; set; }
@@ -36,16 +37,15 @@ namespace gdm_server.Level_Multiplayer.Client {
         /// The room the player is in.
         /// </summary>
         [JsonIgnore]
-        public Room Room { get; set; }
+        public Room Room { get; set; } 
 
         [JsonIgnore]
-        public int SessionKey { get; set; }
-        /// Values that change when playing.
-        #region Changes every frame.
-        /// <summary>
-        /// Positions and transforms.
-        /// </summary>
-        public PlayerPosition Position;
+        // server generated once
+        public int SessionKey { get; set; }= GRandom.RandomInt();
+
         #endregion
+        public IPEndPoint PlayerEndpoint;
+        
+        // player position and transform is not stored anywhere in the server.
     }
 }

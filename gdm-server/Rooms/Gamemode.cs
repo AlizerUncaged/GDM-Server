@@ -19,6 +19,7 @@ namespace gdm_server.Rooms {
         /// until a player finishes a level. All players
         /// should respawn when everyone dies.
         /// </summary>
-        Racemode
+        Racemode,
+        Custom
     }
 }

@@ -8,40 +8,41 @@ using WatsonWebserver;
 
 namespace gdm_server.Rooms {
     public class RoomRoutes {
-        // the only route for adding or settings players
-        [StaticRoute(HttpMethod.POST, "/add")]
+        public async void SendError(HttpContext ctx, string errorMessage)
+        {    
+            await ctx.RespondObjectAsJson(new AccountJoinRoomResponse {
+                IsSuccess = false,
+                Reason = errorMessage
+            });
+        }
+
+        // add or set player room.
+        [StaticRoute(HttpMethod.POST, "/api/add")]
         public async Task GetHelloRoute(HttpContext ctx) {
             var request = ctx.Request.DataAsString;
             var accountJoinRoomRequest = JsonConvert.DeserializeObject<AccountJoinRoomRequest>(request);
-            // deserialize
+            // variables.
             var playerProfile = accountJoinRoomRequest.Player;
-            var roomID = accountJoinRoomRequest.RoomID;
-            var vipKey = accountJoinRoomRequest.VipKey; // optional required only when VIP
+            var roomId = accountJoinRoomRequest.RoomID;
+            var vipKey = accountJoinRoomRequest.VipKey; 
             // check or add player on database server
-            // check if vip
-            var playerID = playerProfile.PlayerID;
-            var playerAccountInfo = new PlayerDataRequest(playerID);
+            // check if vip -------------------------------------------------------------
+            var playerId = playerProfile.PlayerId;
+            var playerAccountInfo = new PlayerDataRequest(playerId);
             var playerStatus = await playerAccountInfo.GetPlayerData();
             if (playerStatus.IsVip) {
-                var isVipValidRequest = new ValidateVipRequest(playerID, vipKey);
+                var isVipValidRequest = new ValidateVipRequest(playerId, vipKey);
                 var isVipValid = await isVipValidRequest.IsKeyValid();
                 if (!isVipValid) {
-                    // invalid key
-                    await ctx.RespondObjectAsJson(new AccountJoinRoomResponse {
-                        IsSuccess = false,
-                        Reason = "Invalid VIP key! Please change it on settings."
-                    });
+                    SendError(ctx, "Invalid VIP key! Please change it on settings.");
                     return;
                 }
             }
-            // vip was valid or not vip
-            // get or craete the room first
+            // vip was valid or not vip -------------------------------------------------
+            // get or create the room first
             var getRoomResult = RoomDatabase.GetOrCreateRoom(accountJoinRoomRequest);
             if (!getRoomResult.WasSuccess) {
-                await ctx.RespondObjectAsJson(new AccountJoinRoomResponse {
-                    IsSuccess = false,
-                    Reason = getRoomResult.Reason
-                });
+                SendError(ctx, getRoomResult.Reason);
                 return;
             }
             var room = getRoomResult.Result;
@@ -53,7 +54,6 @@ namespace gdm_server.Rooms {
                 RoomID = room.RoomID,
                 SessionKey = playerProfile.SessionKey
             });
-            return;
         }
     }
 }
