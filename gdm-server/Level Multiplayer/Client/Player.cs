@@ -44,8 +44,28 @@ namespace gdm_server.Level_Multiplayer.Client {
         public int SessionKey { get; set; }= GRandom.RandomInt();
 
         #endregion
-        public IPEndPoint PlayerEndpoint;
         
+        public IPEndPoint PlayerEndpoint;
+
+        public override bool Equals(object obj)
+        {
+            if (obj is Player player)
+            {
+                return player.PlayerId == this.PlayerId;
+            }
+
+            return false;
+        }
+
+        public static bool operator ==(Player left, Player right)
+        {
+            return right != null && left != null && left.PlayerId == right.PlayerId;
+        }
+
+        public static bool operator !=(Player left, Player right)
+        {
+            return !(left == right);
+        }
         // player position and transform is not stored anywhere in the server.
     }
 }

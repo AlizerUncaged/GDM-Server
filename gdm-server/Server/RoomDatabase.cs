@@ -15,55 +15,62 @@ public static class RoomDatabase {
     /// <summary>
     /// All rooms in the server, be it level multiplayer or collab editor.
     /// </summary>
-    public static List<Room> Rooms = new();
+    private static readonly List<Room> Rooms = new();
 
     /// <summary>
     /// Get the player and room from session key.
     /// </summary>
-    public static Dictionary<int, Player> SessionKeyAndData = new();
-
-    public static void SetPlayerRoom(ref Room room, ref Player player) {
-        player.Room = room;
-        room.Players.Add(player);
-    }
+    public static readonly Dictionary<int, Player> SessionKeyAndData = new();
 
     public static SafeResult<Room> GetOrCreateRoom(AccountJoinRoomRequest joinRequest) {
         // vip has already been checked
         var player = joinRequest.Player;
         var roomId = joinRequest.RoomID;
-        var room = GetRoom(roomId);
-        if (room is null) {
-            // if room does not exist just make it.
-            if (player.IsVip)
-                AddRoom(new Room {
-                    RoomID = roomId,
-                    Gamemode = Gamemodes.Normal,
-                    RoomPassword = String.Empty,
-                    RoomName = $"{player.Username}'s Room"
-                });
-            else
-                return new SafeResult<Room> {
-                    WasSuccess = false,
-                    Reason = "The lobby doesn't exists, you need VIP to create your own lobby."
-                };
-        }
-
+        var addRoomResult = GetOrAddRoom(player, roomId);
+        if (!addRoomResult.WasSuccess)
+            return addRoomResult;
+        
         // set room.
-        player.Room = room;
+        player.Room = addRoomResult.Result;
+        if (!player.Room.Players.Contains(player, new PlayerEqualityComparer()))
+            player.Room.Players.Add(player);
+        
         // cache the player's session key.
         SessionKeyAndData[player.SessionKey] = joinRequest.Player;
-            
-        return new SafeResult<Room> {
-            WasSuccess = true,
-            Result = room
-        };
+        return new SafeResult<Room> {  WasSuccess = true, Result = player.Room};
     }
 
-    public static Room GetRoom(long roomID) {
-        return Rooms.FirstOrDefault(x => x.RoomID == roomID);
+    private static SafeResult<Room> GetOrAddRoom(Player owner, long roomId)
+    {
+        var room = GetRoom(roomId);
+        if (room is null) {
+            var roomAddResult = AddRoom(owner, new Room
+            {
+                RoomID = roomId,
+                Gamemode = Gamemodes.Normal,
+                RoomPassword = String.Empty,
+                RoomName = $"{owner.Username}'s Room"
+            });
+            return roomAddResult;
+        }
+
+        return new SafeResult<Room>{ WasSuccess = true};
     }
 
-    public static void AddRoom(Room room) {
-        Rooms.Add(room);
+    private static Room GetRoom(long roomId) {
+        return Rooms.FirstOrDefault(x => x.RoomID == roomId);
+    }
+
+    /// <summary>
+    /// Creates a room.
+    /// </summary>
+    /// <param name="player">The room owner.</param>
+    /// <param name="room">The room to add.</param>
+    private static SafeResult<Room> AddRoom(Player player, Room room)
+    {
+        if (player.IsVip)
+            Rooms.Add(room);
+        else return new SafeResult<Room> {  WasSuccess = false, Reason = "You need VIP to create rooms."};
+        return new SafeResult<Room> {  WasSuccess = true };
     }
 }

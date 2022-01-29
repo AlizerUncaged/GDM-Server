@@ -23,20 +23,13 @@ namespace gdm_server.Rooms {
             var accountJoinRoomRequest = JsonConvert.DeserializeObject<AccountJoinRoomRequest>(request);
             // variables.
             var playerProfile = accountJoinRoomRequest.Player;
-            var roomId = accountJoinRoomRequest.RoomID;
-            var vipKey = accountJoinRoomRequest.VipKey; 
             // check or add player on database server
             // check if vip -------------------------------------------------------------
-            var playerId = playerProfile.PlayerId;
-            var playerAccountInfo = new PlayerDataRequest(playerId);
-            var playerStatus = await playerAccountInfo.GetPlayerData();
-            if (playerStatus.IsVip) {
-                var isVipValidRequest = new ValidateVipRequest(playerId, vipKey);
-                var isVipValid = await isVipValidRequest.IsKeyValid();
-                if (!isVipValid) {
-                    SendError(ctx, "Invalid VIP key! Please change it on settings.");
-                    return;
-                }
+            var validator = new AccountValidator(accountJoinRoomRequest);
+            if (!await validator.IsKeyValid())
+            {
+                SendError(ctx, "Vip key invalid.");
+                return;
             }
             // vip was valid or not vip -------------------------------------------------
             // get or create the room first
@@ -46,8 +39,6 @@ namespace gdm_server.Rooms {
                 return;
             }
             var room = getRoomResult.Result;
-            // add the player on it
-            RoomDatabase.SetPlayerRoom(ref room, ref playerProfile);
             await ctx.RespondObjectAsJson(new AccountJoinRoomResponse {
                 IsSuccess = true,
                 FPS = Config.GlobalDefaultFPS,
